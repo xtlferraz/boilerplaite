@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  main:
+    container_name: main
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+      - 9229:9229
+    command: npm run start:debug
+    links:
+      - db
+    env_file:
+      - .env
+    networks:
+      - core_service_network
+    depends_on:
+      - db
+  db:
+    container_name: db
+    image: mysql:5.6
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    entrypoint:
+      sh -c "
+        echo 'CREATE DATABASE IF NOT EXISTS nest; CREATE DATABASE IF NOT EXISTS test;' > /docker-entrypoint-initdb.d/init.sql;
+        /usr/local/bin/docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      "
+    ports:
+      - 3306:3306 
+    volumes:
+      - mysqlData  
+    networks:
+      - core_service_network        
+networks:
+  core_service_network:
+    driver: bridge
+    name: core_service_network
+volumes:
+  pgdata:
